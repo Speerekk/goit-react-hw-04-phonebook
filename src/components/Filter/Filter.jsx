@@ -10,7 +10,7 @@ const Filter = ({ value, onChange }) => {
         className={styles.input}
         type="text"
         value={value}
-        onChange={onChange}
+        onChange={event => onChange(event.target.value)}
       />
     </label>
   );

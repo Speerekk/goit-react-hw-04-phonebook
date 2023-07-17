@@ -1,50 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import ContactForm from './components/ContactForm/ContactForm';
 import ContactList from './components/ContactList/ContactList';
 import Filter from './components/Filter/Filter';
 import styles from './App.module.css';
 
-class App extends React.Component {
-  state = {
-    contacts: [],
-    filter: '',
-    name: '',
-    number: '',
+const useLocalStorageState = (key, initialValue) => {
+  const [state, setState] = useState(() => {
+    const savedContacts = localStorage.getItem(key);
+    return savedContacts ? JSON.parse(savedContacts) : initialValue;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(state));
+  }, [key, state]);
+
+  return [state, setState];
+};
+
+const useInputState = initialValue => {
+  const [value, setValue] = useState(initialValue);
+
+  const handleChange = event => {
+    setValue(event.target.value);
   };
 
-  componentDidMount() {
-    const savedContacts = localStorage.getItem('contacts');
-    if (savedContacts) {
-      this.setState({ contacts: JSON.parse(savedContacts) });
-    }
-  }
+  return [value, handleChange];
+};
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.contacts !== this.state.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-    }
-  }
+const App = () => {
+  const [contacts, setContacts] = useLocalStorageState('contacts', []);
+  const [filter, setFilter] = useInputState('');
+  const [name, setName] = useInputState('');
+  const [number, setNumber] = useInputState('');
 
-  handleNameChange = event => {
-    this.setState({ name: event.target.value });
-  };
+  const filteredContacts = contacts.filter(contact =>
+    contact.name.toLowerCase().includes(filter.toLowerCase())
+  );
 
-  handleNumberChange = event => {
-    this.setState({ number: event.target.value });
-  };
-
-  handleAddContact = event => {
+  const handleAddContact = event => {
     event.preventDefault();
-
-    const { name, number, contacts } = this.state;
 
     const existingContact = contacts.find(
       contact => contact.name.toLowerCase() === name.toLowerCase()
     );
 
     if (existingContact) {
-      alert(`${name} is already in contacts.`);
+      alert(`${name} уже есть в контактах.`);
       return;
     }
 
@@ -54,52 +56,43 @@ class App extends React.Component {
       number,
     };
 
-    this.setState(prevState => ({
-      contacts: [...prevState.contacts, newContact],
-      name: '',
-      number: '',
-    }));
+    setContacts(prevContacts => [...prevContacts, newContact]);
+    setName('');
+    setNumber('');
   };
 
-  handleDeleteContact = contactId => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== contactId),
-    }));
+  const handleChange = event => {
+    setFilter(event.target.value);
   };
 
-  handleFilterChange = event => {
-    this.setState({ filter: event.target.value });
-  };
-
-  render() {
-    const { contacts, filter, name, number } = this.state;
-    const filteredContacts = contacts.filter(contact =>
-      contact.name.toLowerCase().includes(filter.toLowerCase())
+  const handleDeleteContact = contactId => {
+    setContacts(prevContacts =>
+      prevContacts.filter(contact => contact.id !== contactId)
     );
+  };
 
-    return (
-      <div className={styles.app}>
-        <h1 className={styles.title}>Phonebook</h1>
+  return (
+    <div className={styles.app}>
+      <h1 className={styles.title}>Телефонная книга</h1>
 
-        <ContactForm
-          name={name}
-          number={number}
-          onNameChange={this.handleNameChange}
-          onNumberChange={this.handleNumberChange}
-          onSubmit={this.handleAddContact}
-        />
+      <ContactForm
+        name={name}
+        number={number}
+        onNameChange={setName}
+        onNumberChange={setNumber}
+        onSubmit={handleAddContact}
+      />
 
-        <h2 className={styles.subtitle}>Contacts</h2>
+      <h2 className={styles.subtitle}>Контакты</h2>
 
-        <Filter value={filter} onChange={this.handleFilterChange} />
+      <Filter value={filter} onChange={handleChange} />
 
-        <ContactList
-          contacts={filteredContacts}
-          onDeleteContact={this.handleDeleteContact}
-        />
-      </div>
-    );
-  }
-}
+      <ContactList
+        contacts={filteredContacts}
+        onDeleteContact={handleDeleteContact}
+      />
+    </div>
+  );
+};
 
 export default App;
