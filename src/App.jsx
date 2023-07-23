@@ -5,38 +5,30 @@ import ContactList from './components/ContactList/ContactList';
 import Filter from './components/Filter/Filter';
 import styles from './App.module.css';
 
-const useLocalStorageState = (key, initialValue) => {
-  const [state, setState] = useState(() => {
-    const savedContacts = localStorage.getItem(key);
-    return savedContacts ? JSON.parse(savedContacts) : initialValue;
-  });
+const App = () => {
+  const [contacts, setContacts] = useState([]);
+  const [filter, setFilter] = useState('');
+  const [name, setName] = useState('');
+  const [number, setNumber] = useState('');
 
   useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(state));
-  }, [key, state]);
+    const savedContacts = localStorage.getItem('contacts');
+    if (savedContacts) {
+      setContacts(JSON.parse(savedContacts));
+    }
+  }, []);
 
-  return [state, setState];
-};
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
 
-const useInputState = initialValue => {
-  const [value, setValue] = useState(initialValue);
-
-  const handleChange = event => {
-    setValue(event.target.value);
+  const handleNameChange = event => {
+    setName(event.target.value);
   };
 
-  return [value, handleChange];
-};
-
-const App = () => {
-  const [contacts, setContacts] = useLocalStorageState('contacts', []);
-  const [filter, setFilter] = useInputState('');
-  const [name, setName] = useInputState('');
-  const [number, setNumber] = useInputState('');
-
-  const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(filter.toLowerCase())
-  );
+  const handleNumberChange = event => {
+    setNumber(event.target.value);
+  };
 
   const handleAddContact = event => {
     event.preventDefault();
@@ -46,7 +38,7 @@ const App = () => {
     );
 
     if (existingContact) {
-      alert(`${name} уже есть в контактах.`);
+      alert(`${name} is already in contacts.`);
       return;
     }
 
@@ -61,31 +53,35 @@ const App = () => {
     setNumber('');
   };
 
-  const handleChange = event => {
-    setFilter(event.target.value);
-  };
-
   const handleDeleteContact = contactId => {
     setContacts(prevContacts =>
       prevContacts.filter(contact => contact.id !== contactId)
     );
   };
 
+  const handleFilterChange = event => {
+    setFilter(event.target.value);
+  };
+
+  const filteredContacts = contacts.filter(contact =>
+    contact.name.toLowerCase().includes(filter.toLowerCase())
+  );
+
   return (
     <div className={styles.app}>
-      <h1 className={styles.title}>Телефонная книга</h1>
+      <h1 className={styles.title}>Phonebook</h1>
 
       <ContactForm
         name={name}
         number={number}
-        onNameChange={setName}
-        onNumberChange={setNumber}
+        onNameChange={handleNameChange}
+        onNumberChange={handleNumberChange}
         onSubmit={handleAddContact}
       />
 
-      <h2 className={styles.subtitle}>Контакты</h2>
+      <h2 className={styles.subtitle}>Contacts</h2>
 
-      <Filter value={filter} onChange={handleChange} />
+      <Filter value={filter} onChange={handleFilterChange} />
 
       <ContactList
         contacts={filteredContacts}
